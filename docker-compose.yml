@@ -1,0 +1,87 @@
+version: "3.9"
+
+# docker-compose.yml — Local full-stack development
+# Usage: docker compose up --build
+# All 3 services will be available at:
+#   Frontend → http://localhost:5173 (Nginx on 80 mapped to 5173)
+#   Node API → http://localhost:5000
+#   Python AI → http://localhost:8000
+
+services:
+  # ─── MongoDB ──────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7-jammy
+    container_name: schedunova-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Node.js API ──────────────────────────────────────────────────────────────
+  node-api:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: schedunova-node-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/schedunova
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ─── Python FastAPI AI ────────────────────────────────────────────────────────
+  python-api:
+    build:
+      context: ./backend-python
+      dockerfile: Dockerfile
+    container_name: schedunova-python-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - FRONTEND_URL=http://localhost:5173
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ─── React Frontend (Nginx) ───────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_NODE_API_URL=http://localhost:5000/api
+        - VITE_PYTHON_API_URL=http://localhost:8000/api
+    container_name: schedunova-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      node-api:
+        condition: service_healthy
+      python-api:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+    name: schedunova_mongo_data
