@@ -1,0 +1,50 @@
+# render.yaml — ScheduNova Microservices Deployment Blueprint
+# Deploy the entire stack (Frontend + Node API + Python AI API) to Render
+# with a single `render blueprint sync` or by connecting this repo on the Render dashboard.
+
+services:
+  # ─── 1. React Frontend (Static Site) ────────────────────────────────────────
+  - type: web
+    name: schedunova-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_NODE_API_URL
+        value: https://schedunova-node-api.onrender.com/api
+      - key: VITE_PYTHON_API_URL
+        value: https://schedunova-python-api.onrender.com/api
+
+  # ─── 2. Node.js Express API ──────────────────────────────────────────────────
+  - type: web
+    name: schedunova-node-api
+    runtime: node
+    rootDir: backend-node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false   # Set this manually in Render dashboard (MongoDB Atlas URI)
+      - key: FRONTEND_URL
+        value: https://schedunova-frontend.onrender.com
+
+  # ─── 3. Python FastAPI AI Service ────────────────────────────────────────────
+  - type: web
+    name: schedunova-python-api
+    runtime: python
+    rootDir: backend-python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: FRONTEND_URL
+        value: https://schedunova-frontend.onrender.com
