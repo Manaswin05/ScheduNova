@@ -1,0 +1,45 @@
+# render.yaml — ScheduNova Docker Deployment Blueprint
+# All 3 services deploy via their own Dockerfiles.
+# Connect this repo on Render and it will auto-detect this file.
+
+services:
+  # ─── 1. React Frontend (Docker → Nginx) ─────────────────────────────────────
+  - type: web
+    name: schedunova-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: VITE_NODE_API_URL
+        value: https://schedunova-node-api.onrender.com/api
+      - key: VITE_PYTHON_API_URL
+        value: https://schedunova-python-api.onrender.com/api
+
+  # ─── 2. Node.js Express API (Docker) ─────────────────────────────────────────
+  - type: web
+    name: schedunova-node-api
+    runtime: docker
+    dockerfilePath: ./backend-node/Dockerfile
+    dockerContext: ./backend-node
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false   # ⚠️ Set this manually in the Render dashboard (MongoDB Atlas URI)
+      - key: FRONTEND_URL
+        value: https://schedunova-frontend.onrender.com
+
+  # ─── 3. Python FastAPI AI Service (Docker) ───────────────────────────────────
+  - type: web
+    name: schedunova-python-api
+    runtime: docker
+    dockerfilePath: ./backend-python/Dockerfile
+    dockerContext: ./backend-python
+    healthCheckPath: /
+    envVars:
+      - key: FRONTEND_URL
+        value: https://schedunova-frontend.onrender.com

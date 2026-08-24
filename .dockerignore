@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.env.local
+.env.production
+*.log
+backend-node
+backend-python
+.git
+.gitignore
+README.md

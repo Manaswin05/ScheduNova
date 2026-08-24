@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables — never commit these
+.env
+.env.local
+.env.production
+
+# Python virtual environment
+backend-python/venv/
+backend-python/__pycache__/
+backend-python/*.pyc
+
+# Node backend build output
+backend-node/dist/
+
+# Docker local overrides (keep docker-compose.yml, ignore local overrides)
+docker-compose.override.yml

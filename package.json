@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:node": "npm run dev --prefix backend-node",
+    "dev:python": "cd backend-python && uvicorn main:app --reload --port 8000",
+    "dev:all": "concurrently --names \"FRONTEND,NODE,PYTHON\" --prefix-colors \"cyan,green,magenta\" \"npm run dev\" \"npm run dev:node\" \"npm run dev:python\"",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
+    "axios": "^1.19.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -29,6 +33,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
+    "concurrently": "^10.0.5",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
